@@ -47,7 +47,7 @@ jobs:
       - name: Import notebooks
         run: |
           if [ "${{ github.ref }}" == "refs/heads/main" ]; then
-            databricks workspace import_dir ./notebooks /Workspace/ProdTargetFolder --overwrite
+            databricks workspace import_dir /Workspace/Users/sce21cs048@sairamtap.edu.in/DEV_DATABRICK_GIT --overwrite
           else
-            databricks workspace import_dir ./notebooks /Workspace/DevTargetFolder --overwrite
+            databricks workspace import_dir /Workspace/Users/sce21cs048@sairamtap.edu.in/PROD_DATABRICK --overwrite
           fi
