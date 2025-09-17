@@ -1,0 +1,53 @@
+name: deploy-notebooks
+
+on:
+  push:
+    paths-ignore:
+      - .github/**
+    branches:
+      - main
+      - develop
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
+    env:
+      DEV_DATABRICKS_HOST: ${{ secrets.DEV_DEPLOYMENT_TARGET_URL }}
+      DEV_DATABRICKS_TOKEN: ${{ secrets.DEV_DEPLOYMENT_TARGET_TOKEN }}
+      PROD_DATABRICKS_HOST: ${{ secrets.PROD_DEPLOYMENT_TARGET_URL }}
+      PROD_DATABRICKS_TOKEN: ${{ secrets.PROD_DEPLOYMENT_TARGET_TOKEN }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+
+      - name: Install Databricks CLI
+        run: pip install databricks-cli
+
+      - name: Configure Databricks CLI
+        run: |
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            databricks configure --token <<EOF
+            ${{ env.PROD_DATABRICKS_HOST }}
+            ${{ env.PROD_DATABRICKS_TOKEN }}
+            EOF
+          else
+            databricks configure --token <<EOF
+            ${{ env.DEV_DATABRICKS_HOST }}
+            ${{ env.DEV_DATABRICKS_TOKEN }}
+            EOF
+          fi
+
+      - name: Import notebooks
+        run: |
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            databricks workspace import_dir ./notebooks /Workspace/ProdTargetFolder --overwrite
+          else
+            databricks workspace import_dir ./notebooks /Workspace/DevTargetFolder --overwrite
+          fi
